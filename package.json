@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "start": "node server/server.js",
     "deploy": "npm run build && npm start",
-    "postinstall": "pnpx puppeteer browsers install chrome",
+    "postinstall": "echo Installing Chrome... && npx puppeteer browsers install chrome",
     "lint": "eslint ."
   },
   "dependencies": {
