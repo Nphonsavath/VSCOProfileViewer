@@ -4,6 +4,11 @@ import cors from 'cors';
 import puppeteer from 'puppeteer';
 import rateLimit from 'express-rate-limit';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const sleep = promisify(setTimeout);
 
@@ -58,6 +63,9 @@ function returnBrowser(browser) {
 app.use(cors());
 app.use(express.json());
 app.use('/api/', limiter);
+
+// Serve static files from the React build directory
+app.use(express.static(join(__dirname, '../dist')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -138,6 +146,11 @@ app.get('/api/vsco/:username', async (req, res) => {
       }
     }
   }
+});
+
+// Serve React app for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, '../dist/index.html'));
 });
 
 // Error handling middleware

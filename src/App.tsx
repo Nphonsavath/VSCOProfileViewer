@@ -30,7 +30,7 @@ function App() {
       }
 
       // Fetch the profile image URL from our backend
-      const response = await fetch(`http://localhost:3001/api/vsco/${username}`, {
+      const response = await fetch(`/api/vsco/${username}`, {
         signal: AbortSignal.timeout(30000) // 30 second timeout
       })
       
