@@ -1,80 +1,55 @@
+// server.js (Puppeteer version)
 const express = require('express');
 const cors = require('cors');
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const port = 3001;
 
-// Enable CORS for our React frontend
 app.use(cors());
 app.use(express.json());
 
-// Root route to show server is running
 app.get('/', (req, res) => {
-  res.json({ 
-    status: 'Server is running',
-    endpoints: {
-      vscoProfile: '/api/vsco/:username'
-    }
+  res.json({
+    status: 'Server running',
+    endpoint: '/api/vsco/:username'
   });
 });
 
-// Endpoint to fetch VSCO profile image
 app.get('/api/vsco/:username', async (req, res) => {
+  const { username } = req.params;
+  const url = `https://vsco.co/${username}`;
+
+  let browser;
   try {
-    const { username } = req.params;
-    console.log('Fetching profile for username:', username);
-    
-    // Fetch the VSCO profile page
-    const response = await axios.get(`https://vsco.co/${username}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
-      }
-    });
+    browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });      
+    const page = await browser.newPage();
 
-    console.log('Response status:', response.status);
-    console.log('Response headers:', response.headers);
+    await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 20000, // lower timeout for speed
+      });
+      
 
-    // Load the HTML into cheerio
-    const $ = cheerio.load(response.data);
-    
-    // Find the profile image - try different selectors
-    let profileImage = $('img[alt=""][width="140"]').attr('src');
-    
-    if (!profileImage) {
-      // Try alternative selectors
-      profileImage = $('img[alt=""]').attr('src');
-    }
-    
-    if (!profileImage) {
-      console.log('HTML content:', response.data);
-      return res.status(404).json({ error: 'Profile image not found' });
-    }
+    // Wait for image to appear (CSS class from inspection)
+    await page.waitForSelector('img.css-1yi5vov', { timeout: 10000 });
 
-    console.log('Found image URL:', profileImage);
-    res.json({ imageUrl: profileImage });
-  } catch (error) {
-    console.error('Error details:', {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      headers: error.response?.headers,
-      data: error.response?.data
-    });
-    
-    if (error.response?.status === 404) {
-      res.status(404).json({ error: 'VSCO profile not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to fetch VSCO profile' });
-    }
+    const imageUrl = await page.$eval('img.css-1yi5vov', img => img.src);
+
+    await browser.close();
+
+    return res.json({ imageUrl });
+  } catch (err) {
+    console.error('[ERROR]', err.message);
+    return res.status(500).json({ error: 'Could not fetch profile image. Possibly private or not found.' });
+  } finally {
+    if (browser) await browser.close();
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-}); 
+  console.log(`✅ Puppeteer server running at http://localhost:${port}`);
+});

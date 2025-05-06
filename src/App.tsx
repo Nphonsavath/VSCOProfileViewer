@@ -82,6 +82,9 @@ function App() {
                 onError={() => setError('Failed to load image. Please try again.')}
               />
             </div>
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg break-all">
+              <p className="text-sm text-gray-700">{profileImage}</p>
+            </div>
           </div>
         )}
       </div>
