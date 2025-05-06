@@ -44,7 +44,7 @@ app.get('/api/vsco/:username', async (req, res) => {
     return res.json({ imageUrl });
   } catch (err) {
     console.error('[ERROR]', err.message);
-    return res.status(500).json({ error: 'Could not fetch profile image. Possibly private or not found.' });
+    return res.status(500).json({ error: 'Could not fetch profile image. The profile may not exist or the username might be mistyped.' });
   } finally {
     if (browser) await browser.close();
   }

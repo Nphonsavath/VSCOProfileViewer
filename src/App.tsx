@@ -74,17 +74,12 @@ function App() {
         {profileImage && (
           <div className="mt-6">
             <h2 className="text-lg font-medium text-gray-900 mb-2">Profile Picture</h2>
-            <div className="aspect-w-1 aspect-h-1">
-              <img
-                src={profileImage}
-                alt="VSCO Profile"
-                className="w-full h-full object-cover rounded-lg"
-                onError={() => setError('Failed to load image. Please try again.')}
-              />
-            </div>
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg break-all">
-              <p className="text-sm text-gray-700">{profileImage}</p>
-            </div>
+            <img
+              src={profileImage.replace('w=300', 'w=1500')}
+              alt="VSCO Profile"
+              className="w-full rounded-lg"
+              onError={() => setError('Failed to load image. Please try again.')}
+            />
           </div>
         )}
       </div>
