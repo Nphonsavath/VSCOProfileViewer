@@ -34,7 +34,18 @@ async function initializeBrowserPool() {
     try {
       const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-default-apps',
+            '--disable-notifications',
+            '--disable-popup-blocking',
+            '--no-first-run',
+            '--no-zygote'
+          ]
       });
       browserPool.push(browser);
     } catch (err) {
@@ -95,11 +106,25 @@ app.get('/api/vsco/:username', async (req, res) => {
 
     // Set timeout and viewport
     await page.setDefaultNavigationTimeout(BROWSER_TIMEOUT);
-    await page.setViewport({ width: 1280, height: 800 });
+    await page.setViewport({ width: 800, height: 600 });
+
+    // Block unnecessary resources
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+      const resourceType = request.resourceType();
+      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+        request.abort();
+      } else {
+        request.continue();
+      }
+    });
 
     // Navigate to profile
     const url = `https://vsco.co/${username}`;
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { 
+      waitUntil: 'domcontentloaded',  // Faster than 'networkidle0'
+      timeout: 30000
+    });
 
     // Wait for image with retry logic
     let imageUrl;
