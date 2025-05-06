@@ -25,7 +25,7 @@ const limiter = rateLimit({
 
 // Browser instance pool
 let browserPool = [];
-const MAX_BROWSERS = 5;
+const MAX_BROWSERS = 2;
 const BROWSER_TIMEOUT = 90000; // 90 seconds
 
 // Initialize browser pool
