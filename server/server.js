@@ -13,6 +13,7 @@ const __dirname = dirname(__filename);
 const sleep = promisify(setTimeout);
 
 const app = express();
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3001;
 
 // Rate limiting to prevent abuse
