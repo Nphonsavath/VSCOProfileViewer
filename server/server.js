@@ -148,7 +148,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(port, async () => {
-  console.log(`✅ Server running at http://localhost:${port}`);
+  console.log(`Server running');
   await initializeBrowserPool();
-  console.log(`✅ Browser pool initialized with ${browserPool.length} instances`);
+  console.log(`Browser pool initialized with ${browserPool.length} instances`);
 });
