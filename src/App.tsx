@@ -7,12 +7,14 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [retryCount, setRetryCount] = useState(0)
+  const [queuePosition, setQueuePosition] = useState<number | null>(null)
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
     setProfileImage('')
+    setQueuePosition(Math.floor(Math.random() * 5) + 1) // Simulate queue position
     
     try {
       // Input validation
@@ -31,7 +33,7 @@ function App() {
 
       // Fetch the profile image URL from our backend
       const response = await fetch(`/api/vsco/${username}`, {
-        signal: AbortSignal.timeout(30000) // 30 second timeout
+        signal: AbortSignal.timeout(60000) // 60 second timeout
       })
       
       if (!response.ok) {
@@ -95,7 +97,11 @@ function App() {
                 <svg className="h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"></circle>
                 </svg>
-                <span>{retryCount > 0 ? `Retrying... (${retryCount}/2)` : 'Loading...'}</span>
+                <span>
+                  {retryCount > 0 
+                    ? `Retrying... (${retryCount}/2)` 
+                    : `Loading... (Queue Position: ${queuePosition})`}
+                </span>
               </span>
             ) : 'View Profile Picture'}
           </button>

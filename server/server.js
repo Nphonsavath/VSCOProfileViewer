@@ -16,6 +16,8 @@ const app = express();
 app.set('trust proxy', 1);
 const port = process.env.PORT || 3001;
 
+let waitingClients = 0;
+
 // Rate limiting to prevent abuse
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -54,11 +56,18 @@ async function initializeBrowserPool() {
   }
 }
 
-
 // Get available browser from pool
-async function getBrowser() {
-  while (browserPool.length === 0) {
-    await sleep(1000); // Wait for a browser to become available
+async function getBrowser(res = null) {
+  if (browserPool.length === 0) {
+    waitingClients++;
+    if (res) {
+      // Send queue position as a header
+      res.set('X-Queue-Position', waitingClients);
+    }
+    while (browserPool.length === 0) {
+      await sleep(1000);
+    }
+    waitingClients--;
   }
   return browserPool.shift();
 }
@@ -102,7 +111,7 @@ app.get('/api/vsco/:username', async (req, res) => {
     }
 
     // Get browser from pool
-    browser = await getBrowser();
+    browser = await getBrowser(res);
     page = await browser.newPage();
 
     // Set timeout and viewport
@@ -151,14 +160,16 @@ app.get('/api/vsco/:username', async (req, res) => {
     res.json({ imageUrl });
   } catch (err) {
     console.error(`Error fetching profile for ${username}:`, err.message);
-    
-    // Handle specific error cases
-    if (err.message.includes('net::ERR_CONNECTION_REFUSED')) {
-      res.status(503).json({ error: 'VSCO service temporarily unavailable' });
-    } else if (err.message.includes('net::ERR_NAME_NOT_RESOLVED')) {
-      res.status(404).json({ error: 'VSCO profile not found' });
-    } else if (err.message.includes('timeout')) {
-      res.status(504).json({ error: 'Request timed out' });
+
+    // VSCO is down or slow
+    if (
+      err.message.includes('net::ERR_CONNECTION_REFUSED') ||
+      err.message.includes('net::ERR_NAME_NOT_RESOLVED') ||
+      err.message.includes('timeout')
+    ) {
+      res.status(503).json({
+        error: 'VSCO is currently slow or unavailable. Please try again soon.'
+      });
     } else {
       res.status(500).json({ error: 'Failed to fetch profile image' });
     }
@@ -191,4 +202,20 @@ app.listen(port, async () => {
   console.log(`Server running`);
   await initializeBrowserPool();
   console.log(`Browser pool initialized with ${browserPool.length} instances`);
+
+  // After initializing the browser pool
+  async function warmUpVSCO() {
+    try {
+      const browser = await getBrowser();
+      const page = await browser.newPage();
+      await page.goto('https://vsco.co/', { waitUntil: 'domcontentloaded', timeout: 10000 });
+      await page.close();
+      returnBrowser(browser);
+      console.log('VSCO warm-up complete');
+    } catch (e) {
+      console.log('VSCO warm-up failed:', e.message);
+    }
+  }
+  // Call this after pool initialization
+  await warmUpVSCO();
 });
