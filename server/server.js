@@ -192,20 +192,4 @@ app.listen(port, async () => {
   console.log(`Server running`);
   await initializeBrowserPool();
   console.log(`Browser pool initialized with ${browserPool.length} instances`);
-
-  // After initializing the browser pool
-  async function warmUpVSCO() {
-    try {
-      const browser = await getBrowser();
-      const page = await browser.newPage();
-      await page.goto('https://vsco.co/', { waitUntil: 'domcontentloaded', timeout: 10000 });
-      await page.close();
-      returnBrowser(browser);
-      console.log('VSCO warm-up complete');
-    } catch (e) {
-      console.log('VSCO warm-up failed:', e.message);
-    }
-  }
-  // Call this after pool initialization
-  await warmUpVSCO();
 });
