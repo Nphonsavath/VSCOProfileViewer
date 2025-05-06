@@ -16,8 +16,6 @@ const app = express();
 app.set('trust proxy', 1);
 const port = process.env.PORT || 3001;
 
-let waitingClients = 0;
-
 // Rate limiting to prevent abuse
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -57,17 +55,9 @@ async function initializeBrowserPool() {
 }
 
 // Get available browser from pool
-async function getBrowser(res = null) {
-  if (browserPool.length === 0) {
-    waitingClients++;
-    if (res) {
-      // Send queue position as a header
-      res.set('X-Queue-Position', waitingClients);
-    }
-    while (browserPool.length === 0) {
-      await sleep(1000);
-    }
-    waitingClients--;
+async function getBrowser() {
+  while (browserPool.length === 0) {
+    await sleep(1000); // Wait for a browser to become available
   }
   return browserPool.shift();
 }
@@ -111,7 +101,7 @@ app.get('/api/vsco/:username', async (req, res) => {
     }
 
     // Get browser from pool
-    browser = await getBrowser(res);
+    browser = await getBrowser();
     page = await browser.newPage();
 
     // Set timeout and viewport
