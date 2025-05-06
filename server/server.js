@@ -32,7 +32,6 @@ const BROWSER_TIMEOUT = 90000; // 90 seconds
 async function initializeBrowserPool() {
   for (let i = 0; i < MAX_BROWSERS; i++) {
     try {
-      console.time(`browser-launch-${i + 1}`);
       const browser = await puppeteer.launch({
         headless: true,
         args: [
@@ -48,7 +47,6 @@ async function initializeBrowserPool() {
           '--no-zygote'
         ]
       });
-      console.timeEnd(`browser-launch-${i + 1}`);
       browserPool.push(browser);
     } catch (err) {
       console.error('Failed to initialize browser:', err);
@@ -124,15 +122,12 @@ app.get('/api/vsco/:username', async (req, res) => {
 
     // Navigate to profile
     const url = `https://vsco.co/${username}`;
-    console.time(`page-load-${username}`);
     await page.goto(url, { 
       waitUntil: 'domcontentloaded',
       timeout: 90000
     });
-    console.timeEnd(`page-load-${username}`);
 
     // Wait for image with retry logic
-    console.time(`image-lookup-${username}`);
     let imageUrl;
     for (let i = 0; i < 3; i++) {
       try {
@@ -144,7 +139,6 @@ app.get('/api/vsco/:username', async (req, res) => {
         await sleep(1000);
       }
     }
-    console.timeEnd(`image-lookup-${username}`);
 
     if (!imageUrl) {
       throw new Error('Profile image not found');
