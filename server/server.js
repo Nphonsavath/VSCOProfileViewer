@@ -1,9 +1,10 @@
 // server.js (Puppeteer version)
-const express = require('express');
-const cors = require('cors');
-const puppeteer = require('puppeteer');
-const rateLimit = require('express-rate-limit');
-const { promisify } = require('util');
+import express from 'express';
+import cors from 'cors';
+import puppeteer from 'puppeteer';
+import rateLimit from 'express-rate-limit';
+import { promisify } from 'util';
+
 const sleep = promisify(setTimeout);
 
 const app = express();
